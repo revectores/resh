@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#define BUF_SIZE 4096
 
 
 char* params[100];
@@ -16,16 +15,42 @@ int background_mode = 0;
 int redirection_mode = 0;
 char* redirect_to;
 
-// char buf[BUF_SIZE];
-char error_message[30] = "An error has occurred\n";
-
 
 void decrease_cur_proc(){
     cur_proc --;
 }
 
 
+void err_msg(){
+    char error_message[30] = "An error has occurred\n";
+    write(STDERR_FILENO, error_message, strlen(error_message));
+    // fflush(NULL);
+}
+
+
+int add_space(char raw_input[]){
+    char input[512];
+    int raw_cur = 0;
+    int cur = 0;
+    char c;
+
+    while ((c = raw_input[raw_cur++])){
+        if (c == '>') {
+            input[cur++] = ' ';
+            input[cur++] = c;
+            input[cur++] = ' ';
+        } else {
+            input[cur++] = c;
+        }
+    }
+
+    strcpy(raw_input, input);
+    return 0;
+}
+
+
 int parser(char* input){
+    /* split input into params list */
     int param_index = 0;
     background_mode = 0;
     redirection_mode = 0;
@@ -38,7 +63,7 @@ int parser(char* input){
 
     if (param_index >= 2 && strcmp(params[param_index-1], "&") == 0){
         background_mode = 1;
-        param_index --;
+        
     }
 
     if (param_index >= 3 && strcmp(params[param_index-2], ">") == 0){
@@ -60,8 +85,15 @@ int is_cmd(char* const command){
 
 int pwd(){
     char cwd[80];
-    write(STDOUT_FILENO, getcwd(cwd, sizeof(cwd)), strlen(cwd));
-    write(STDOUT_FILENO, "\n", 1);
+    int fd = STDOUT_FILENO;
+
+    if (redirection_mode){
+        fd = open(redirect_to, O_WRONLY | O_CREAT | O_TRUNC);
+        fchmod(fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    }
+
+    write(fd, getcwd(cwd, sizeof(cwd)), strlen(cwd));
+    write(fd, "\n", 1);
     return 0;
 }
 
@@ -73,13 +105,8 @@ int cd(){
 }
 
 
-void err_msg(){
-    write(STDERR_FILENO, error_message, strlen(error_message));
-    fflush(NULL);
-}
-
-
 int route(){
+    /* The built-in commands */
     if (is_cmd("exit")){
         exit(0);
     } else if (is_cmd("wait")){
@@ -93,10 +120,9 @@ int route(){
     } else if (is_cmd("cd")){
         cd();
         return 0;
-    } else {
-
     }
 
+    /* fork to execute non built-in command */
     cur_proc ++;
     int rc = fork();
 
@@ -137,6 +163,11 @@ int main(int argc, const char** argv){
     char* r;
     while ((r = fgets(input, 512, file_ptr)) != NULL){
         if (batch_mode) write(STDOUT_FILENO, input, strlen(input));
+        // printf("%s\n", input);
+        int err = add_space(input);
+        // printf("%s\n", input);
+        // continue;
+
         strtok(input, "\n");
         int param_count = parser(input);
 
