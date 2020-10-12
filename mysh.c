@@ -13,7 +13,8 @@ int cur_proc;
 int batch_mode = 0;
 int background_mode = 0;
 int redirection_mode = 0;
-char* redirect_to;
+int pipe_mode = 0;
+char redirect_to[512];
 
 
 void decrease_cur_proc(){
@@ -28,32 +29,43 @@ void err_msg(){
 }
 
 
-int add_space(char raw_input[]){
-    char input[512];
-    int raw_cur = 0;
-    int cur = 0;
-    char c;
+void redirect_parser(char* input){
+    redirection_mode = 0;
 
-    while ((c = raw_input[raw_cur++])){
-        if (c == '>') {
-            input[cur++] = ' ';
-            input[cur++] = c;
-            input[cur++] = ' ';
-        } else {
-            input[cur++] = c;
-        }
+    char* chr_ptr = strchr(input, '>');
+
+    if (chr_ptr) {
+        redirection_mode = 1;
+        *chr_ptr = '\0';
+        chr_ptr ++;
+        while(*chr_ptr== ' ') chr_ptr++;
+        strcpy(redirect_to, chr_ptr);
     }
-
-    strcpy(raw_input, input);
-    return 0;
 }
+
+
+/*
+void pipe_parser(char* input){
+    pipe_mode = 0;
+
+    char* chr_ptr = strchr(input, '|');
+
+    if (chr_ptr) {
+        pipe_mode = 1;
+        *chr_ptr = '\0';
+        char_ptr ++;
+
+    }
+}
+*/
 
 
 int parser(char* input){
     /* split input into params list */
     int param_index = 0;
     background_mode = 0;
-    redirection_mode = 0;
+
+    redirect_parser(input);
 
     char* param;
     params[param_index++] = strtok(input, " ");
@@ -65,13 +77,6 @@ int parser(char* input){
         background_mode = 1;
         
     }
-
-    if (param_index >= 3 && strcmp(params[param_index-2], ">") == 0){
-        redirection_mode = 1;
-        redirect_to = params[param_index-1];
-        param_index -= 2;
-    }
-
     // printf("param_index = %d\n", param_index);
     params[param_index] = NULL;
     return param_index;
@@ -163,10 +168,6 @@ int main(int argc, const char** argv){
     char* r;
     while ((r = fgets(input, 512, file_ptr)) != NULL){
         if (batch_mode) write(STDOUT_FILENO, input, strlen(input));
-        // printf("%s\n", input);
-        int err = add_space(input);
-        // printf("%s\n", input);
-        // continue;
 
         strtok(input, "\n");
         int param_count = parser(input);
