@@ -36,8 +36,8 @@ void err_msg(){
     write(STDERR_FILENO, error_message, strlen(error_message));
 }
 
-void mysh_prompt(){
-    write(STDOUT_FILENO, "mysh> ", 6);
+void resh_prompt(){
+    write(STDOUT_FILENO, "resh> ", 6);
 }
 
 
@@ -193,7 +193,7 @@ int main(int argc, const char** argv){
     }
 
     FILE* file_ptr = stdin;
-    if (!batch_mode) mysh_prompt();
+    if (!batch_mode) resh_prompt();
 
     char* r;
 
@@ -206,7 +206,7 @@ int main(int argc, const char** argv){
 
         strtok(input, "\n");
         if (input[0] == '\n' || is_spaces(input)){
-            mysh_prompt();
+            resh_prompt();
             continue;
         }
 
@@ -258,7 +258,7 @@ int main(int argc, const char** argv){
         }
 
         if (is_pipe_out) _exit(0);
-        if (!batch_mode) mysh_prompt();
+        if (!batch_mode) resh_prompt();
     }
 
     fclose(file_ptr);

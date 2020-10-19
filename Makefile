@@ -1,8 +1,8 @@
-mysh: mysh.o
-	gcc -o mysh mysh.o
+resh: resh.o
+	gcc -o resh resh.o
 
-mysh.o: mysh.c
-	gcc -o mysh.o -c mysh.c
+resh.o: resh.c
+	gcc -o resh.o -c resh.c
 
 clean:
-	rm mysh.o mysh
+	rm resh.o resh
