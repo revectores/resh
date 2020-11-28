@@ -1,3 +1,3 @@
 # README
 
-A naive generel propose shell, with background, redirection, pipe, and batch mode support.
+A naive general-purpose shell with background execution, redirection, pipe, and batch mode support.

@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <sys/stat.h>
+#include <signal.h>
 
 
 char* params[100];
@@ -79,20 +80,20 @@ void pipe_parser(char* input){
 
 
 void background_parser(char* input){
-	background_mode = 0;
+    background_mode = 0;
 
-	char* chr_ptr = input + (strlen(input) - 1);
-	if (*chr_ptr == '&') { 
-		background_mode = 1;
-		*chr_ptr = '\0';
-	}
+    char* chr_ptr = input + (strlen(input) - 1);
+    if (*chr_ptr == '&') {
+        background_mode = 1;
+        *chr_ptr = '\0';
+    }
 }
 
 
 void strip_tail_spaces(char* input){
-	char* chr_ptr = input + (strlen(input) - 1);
-	while(*chr_ptr == ' ') chr_ptr--;
-	*(chr_ptr + 1) = '\0';
+    char* chr_ptr = input + (strlen(input) - 1);
+    while(*chr_ptr == ' ') chr_ptr--;
+    *(chr_ptr + 1) = '\0';
 }
 
 
@@ -164,14 +165,10 @@ int route(){
         }
     } else if (rc == 0){
         // printf("pipe_mode=%d\n", pipe_mode);
-        if (redirect_mode){
-            dup2(output_fd, STDOUT_FILENO);
-        }
-        if (pipe_mode){
+        if (redirect_mode || pipe_mode){
             dup2(output_fd, STDOUT_FILENO);
         }
         execvp(params[0], params);
-        // write(STDERR_FILENO, "output_here", strlen("output_here"));
         err_msg();
         _exit(0);
     }
@@ -210,8 +207,8 @@ int main(int argc, const char** argv){
             continue;
         }
 
-		strip_tail_spaces(input);
-		background_parser(input);
+        strip_tail_spaces(input);
+        background_parser(input);
         pipe_parser(input);
         redirect_parser(input);
         int param_count = parser(input);
@@ -239,7 +236,7 @@ int main(int argc, const char** argv){
         route();
         
         if (pipe_mode) {
-        	cur_proc++;
+            cur_proc++;
             int rc = fork();
 
             if (rc == -1) {
